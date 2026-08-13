@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { PostgreSqlDriver } from '@mikro-orm/postgresql';
-import { SomeEntity } from './entities/some.entity.js';
+import { entities } from './entities/index.js';
 
 @Module({
   imports: [
@@ -12,7 +12,7 @@ import { SomeEntity } from './entities/some.entity.js';
       user: process.env['DB_USERNAME'] ?? 'admin',
       password: process.env['DB_PASSWORD'] ?? 'admin',
       dbName: process.env['DB_NAME'] ?? 'pokemon',
-      entities: [SomeEntity],
+      entities,
       autoLoadEntities: true,
     }),
   ],

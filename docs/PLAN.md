@@ -182,7 +182,7 @@ tilt down && kubectl delete pvc pokemon-postgres-pvc
 `project.json`) — the generator fights the no-`package.json` convention here. Add to
 `tsconfig.base.json` (currently has no `paths` key):
 ```json
-"paths": { "@interview/contracts": ["packages/pokemon-contracts/src/index.ts"] }
+"paths": { "@pokemon/contracts": ["packages/pokemon-contracts/src/index.ts"] }
 ```
 Both vite configs already register `nxViteTsPaths()` — no bundler changes.
 **0.3** Dev proxy in `packages/pokemon-ui/vite.config.ts`:
@@ -194,7 +194,7 @@ proxy: { '/api': { target: 'http://localhost:3000', changeOrigin: true } }
 ## Phase 1 — Contracts (the gate)
 
 Write the contract set above into `pokemon-contracts`. Review it standalone.
-✅ Both apps import a type from `@interview/contracts` and `nx build` passes on each.
+✅ Both apps import a type from `@pokemon/contracts` and `nx build` passes on each.
 
 **After this phase, 2A and 2B run in parallel.**
 
