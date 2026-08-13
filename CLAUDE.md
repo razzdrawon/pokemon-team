@@ -34,6 +34,13 @@ Reading, building, linting, testing, and starting dev servers need no confirmati
 
 ---
 
+## Communication style
+
+Responses should be compact, clear, direct. No preamble, no filler, no redundancy. Prefer
+the short version over the thorough one — say what changed and what's next, skip the rest.
+
+---
+
 ## Project
 
 Pokémon Team Builder — the Chorus engineering take-home. Pick a Profile, choose up to 6 of
@@ -52,7 +59,7 @@ Tilt over Docker Desktop Kubernetes · Vitest + Playwright
 
 | Package | What it is |
 |---|---|
-| `packages/pokemon-contracts` | Types-only lib shared by both apps (`@interview/contracts`) |
+| `packages/pokemon-contracts` | Types-only lib shared by both apps (`@pokemon/contracts`) |
 | `packages/pokemon-user-backend` | NestJS API, runs in k8s |
 | `packages/pokemon-ui` | React app, runs as a local Vite dev server |
 | `packages/*-e2e` | Playwright (UI) and Jest (backend) e2e projects |
