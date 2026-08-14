@@ -1,0 +1,204 @@
+{
+  "info": {
+    "_postman_id": "b3e0f7a0-6b1e-4b3a-9f0a-pokemon-team-builder",
+    "name": "Pokemon Team Builder",
+    "description": "All 5 endpoints + the documented error cases. Base URL and profileId are collection variables — \"Create Profile\" auto-fills profileId from its response so the rest of the folder chains without manual edits.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000/api" },
+    { "key": "profileId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Pokemon",
+      "item": [
+        {
+          "name": "List Pokemon",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/pokemon", "host": ["{{baseUrl}}"], "path": ["pokemon"] },
+            "description": "200 PokemonDto[] — 150 entries, ordered by dex number."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profiles",
+      "item": [
+        {
+          "name": "List Profiles",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/profiles", "host": ["{{baseUrl}}"], "path": ["profiles"] },
+            "description": "200 ProfileDto[] — empty array if none, never 404."
+          }
+        },
+        {
+          "name": "Create Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('profileId', body.id);",
+                  "  console.log('profileId set to', body.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Ash\"\n}" },
+            "url": { "raw": "{{baseUrl}}/profiles", "host": ["{{baseUrl}}"], "path": ["profiles"] },
+            "description": "201 ProfileDto. Sets {{profileId}} from the response for the rest of this folder."
+          }
+        },
+        {
+          "name": "Get Profile (with team)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/profiles/{{profileId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["profiles", "{{profileId}}"]
+            },
+            "description": "200 ProfileWithTeamDto — team[] is empty until Set Team has been called."
+          }
+        },
+        {
+          "name": "Set Team",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"pokemonIds\": [1, 4, 7, 25, 39, 52]\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/profiles/{{profileId}}/team",
+              "host": ["{{baseUrl}}"],
+              "path": ["profiles", "{{profileId}}", "team"]
+            },
+            "description": "200 ProfileWithTeamDto. Full replace — array order sets slot (index 0 = slot 1)."
+          }
+        },
+        {
+          "name": "Clear Team",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"pokemonIds\": []\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/profiles/{{profileId}}/team",
+              "host": ["{{baseUrl}}"],
+              "path": ["profiles", "{{profileId}}", "team"]
+            },
+            "description": "200 ProfileWithTeamDto with team: [] — empty array is a valid submission."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Error cases",
+      "item": [
+        {
+          "name": "Create Profile — empty name (400 VALIDATION_FAILED)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"\"\n}" },
+            "url": { "raw": "{{baseUrl}}/profiles", "host": ["{{baseUrl}}"], "path": ["profiles"] }
+          }
+        },
+        {
+          "name": "Create Profile — duplicate name (409 PROFILE_NAME_TAKEN)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Ash\"\n}" },
+            "url": { "raw": "{{baseUrl}}/profiles", "host": ["{{baseUrl}}"], "path": ["profiles"] },
+            "description": "Run \"Create Profile\" first with the same name so this actually collides."
+          }
+        },
+        {
+          "name": "Get Profile — malformed uuid (400 VALIDATION_FAILED)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/profiles/not-a-uuid",
+              "host": ["{{baseUrl}}"],
+              "path": ["profiles", "not-a-uuid"]
+            }
+          }
+        },
+        {
+          "name": "Get Profile — unknown uuid (404 PROFILE_NOT_FOUND)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/profiles/00000000-0000-4000-8000-000000000000",
+              "host": ["{{baseUrl}}"],
+              "path": ["profiles", "00000000-0000-4000-8000-000000000000"]
+            }
+          }
+        },
+        {
+          "name": "Set Team — 7 ids (400 TEAM_SIZE_EXCEEDED)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"pokemonIds\": [1, 2, 3, 4, 5, 6, 7]\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/profiles/{{profileId}}/team",
+              "host": ["{{baseUrl}}"],
+              "path": ["profiles", "{{profileId}}", "team"]
+            }
+          }
+        },
+        {
+          "name": "Set Team — duplicate id (400 DUPLICATE_POKEMON)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"pokemonIds\": [1, 1, 2]\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/profiles/{{profileId}}/team",
+              "host": ["{{baseUrl}}"],
+              "path": ["profiles", "{{profileId}}", "team"]
+            }
+          }
+        },
+        {
+          "name": "Set Team — unknown pokemon id (400 UNKNOWN_POKEMON)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"pokemonIds\": [1, 9999]\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/profiles/{{profileId}}/team",
+              "host": ["{{baseUrl}}"],
+              "path": ["profiles", "{{profileId}}", "team"]
+            }
+          }
+        },
+        {
+          "name": "Set Team — unknown profile (404 PROFILE_NOT_FOUND)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"pokemonIds\": [1, 4]\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/profiles/00000000-0000-4000-8000-000000000000/team",
+              "host": ["{{baseUrl}}"],
+              "path": ["profiles", "00000000-0000-4000-8000-000000000000", "team"]
+            },
+            "description": "Also proves precedence: PROFILE_NOT_FOUND wins even though the body is also oversized/invalid-shaped in other tests."
+          }
+        }
+      ]
+    }
+  ]
+}
