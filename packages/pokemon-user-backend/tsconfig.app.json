@@ -7,10 +7,7 @@
     "moduleResolution": "nodenext",
     "target": "ES2022",
     "resolveJsonModule": true,
-    // Program-wide root under nodenext: this app imports @pokemon/contracts, which lives
-    // outside this package, so the root must cover both. Vite/rolldown (the real build)
-    // ignores this — it's only used by tsc/tsserver for cross-package file-set validation.
-    "rootDir": "../.."
+    "rootDir": "../.." // covers @pokemon/contracts too; tsc/tsserver only, Vite ignores it
   },
   "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts"],
   "include": ["src/**/*.ts"]
