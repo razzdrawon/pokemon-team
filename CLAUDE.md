@@ -46,9 +46,17 @@ the short version over the thorough one — say what changed and what's next, sk
 Pokémon Team Builder — the Chorus engineering take-home. Pick a Profile, choose up to 6 of
 the first 150 Pokémon, submit.
 
-**The plan lives at [`docs/PLAN.md`](docs/PLAN.md)** — contracts, data model, phases, and the
-tradeoffs behind each decision. Read it before starting work; keep it current if we change
-direction.
+Four docs, each with one job — no fact repeated across them, link instead of restating:
+- **[`docs/PLAN.md`](docs/PLAN.md)** — internal working plan. Frozen once written; don't
+  edit it to cross-reference the others.
+- **[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)** — technical map of the system as built:
+  diagrams, data model, request flow, module structure. Facts, not reasoning.
+- **[`docs/DECISIONS.md`](docs/DECISIONS.md)** — for reviewers: why, tradeoffs, findings,
+  gotchas hit during implementation. Reasoning, not structure.
+- **`README.md`** — how to run + links to the above.
+
+Read `PLAN.md` before starting work. Add to `ARCHITECTURE.md`/`DECISIONS.md` as we go, not
+as a Phase 4 afterthought — but each addition goes in exactly one of the two.
 
 ### Stack
 

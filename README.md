@@ -27,6 +27,13 @@ This is a take-home project. If it goes well, we'll invite you to a 1-hour pairi
 - Tilt
 - Docker Desktop + Kubernetes
 
+## Documentation
+
+- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — technical map: diagrams, data model, request flow
+- **[docs/DECISIONS.md](docs/DECISIONS.md)** — why: tradeoffs, findings, gotchas hit while building
+- **[docs/PLAN.md](docs/PLAN.md)** — the internal working plan this was built from
+- **[LLM_TRANSCRIPT.md](LLM_TRANSCRIPT.md)** — full AI-assisted session transcript
+
 ## Prerequisites
 
 - [nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
