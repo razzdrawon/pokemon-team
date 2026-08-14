@@ -74,6 +74,11 @@ Tilt over Docker Desktop Kubernetes · Vitest + Playwright
 - **Mappers at the boundary.** Entities never serialize straight to the wire.
 - **Test what carries signal** — business rules (the 6-cap, not-found paths), not controllers,
   mappers, or presentational components. See the testing table in `docs/PLAN.md`.
+- **Comment only what the code can't say.** Skip a comment if the name and type already
+  make it obvious. Reach for one when a wrong guess would cause a bug — units, formats,
+  ordering guarantees, *why* a field exists — not to restate what a type already shows.
+  Prefer a short trailing `// note` over a `/** doc block */`. Don't comment every field
+  in an interface just because one of them needed it.
 - **One phase at a time.** Stop at the checkpoints in the plan so I can review.
 
 ---
