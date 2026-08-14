@@ -74,6 +74,9 @@ Tilt over Docker Desktop Kubernetes · Vitest + Playwright
 - **Mappers at the boundary.** Entities never serialize straight to the wire.
 - **Test what carries signal** — business rules (the 6-cap, not-found paths), not controllers,
   mappers, or presentational components. See the testing table in `docs/PLAN.md`.
+- **Check installed versions before using an API.** Verify against `package.json` /
+  `node_modules/<pkg>` before assuming behavior — this repo runs ahead of the curve
+  (TS 6, Vite 8, ESLint 10), so version drift is real, not hypothetical.
 - **Comment only what the code can't say.** Skip a comment if the name and type already
   make it obvious. Reach for one when a wrong guess would cause a bug — units, formats,
   ordering guarantees, *why* a field exists — not to restate what a type already shows.
