@@ -1,7 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { EntityManager, UniqueConstraintViolationException } from '@mikro-orm/core';
+import { MAX_TEAM_SIZE } from '@pokemon/contracts';
 import type { ProfileDto, ProfileWithTeamDto } from '@pokemon/contracts';
 import { Profile } from '../database/entities/profile.entity.js';
+import { Pokemon } from '../database/entities/pokemon.entity.js';
 import { ProfilePokemon } from '../database/entities/profile-pokemon.entity.js';
 import { AppException } from '../../common/app-exception.js';
 import { toProfileDto, toProfileWithTeamDto } from './profile.mapper.js';
@@ -43,8 +45,18 @@ export class ProfileService {
 
   async findOneWithTeam(id: string): Promise<ProfileWithTeamDto> {
     const profile = await this.findProfileOrThrow(this.em, id);
-    const members = await this.em.find(ProfilePokemon, { profile }, { populate: ['pokemon'] });
-    return toProfileWithTeamDto(profile, members);
+    return this.loadTeam(this.em, profile);
+  }
+
+  // Precedence matches pokemon-contracts/src/errors.ts (cheapest/most-fundamental check
+  // first). Reads as one pipeline; each step's detail lives in its own method below.
+  async setTeam(id: string, pokemonIds: number[]): Promise<ProfileWithTeamDto> {
+    return this.em.transactional(async (em) => {
+      const profile = await this.findProfileOrThrow(em, id);
+      const pokemonById = await this.validateTeamSelection(em, pokemonIds);
+      await this.replaceTeam(em, profile, pokemonIds, pokemonById);
+      return this.loadTeam(em, profile);
+    });
   }
 
   private async findProfileOrThrow(em: EntityManager, id: string): Promise<Profile> {
@@ -53,5 +65,59 @@ export class ProfileService {
       throw new AppException('PROFILE_NOT_FOUND', `Profile ${id} not found`);
     }
     return profile;
+  }
+
+  // Structural checks first (no DB read), then confirms every id actually exists.
+  private async validateTeamSelection(
+    em: EntityManager,
+    pokemonIds: number[]
+  ): Promise<Map<number, Pokemon>> {
+    if (pokemonIds.length > MAX_TEAM_SIZE) {
+      throw new AppException(
+        'TEAM_SIZE_EXCEEDED',
+        `A team can have at most ${MAX_TEAM_SIZE} Pokémon`
+      );
+    }
+
+    if (new Set(pokemonIds).size !== pokemonIds.length) {
+      throw new AppException('DUPLICATE_POKEMON', 'A team cannot include the same Pokémon twice');
+    }
+
+    const pokemon = pokemonIds.length
+      ? await em.find(Pokemon, { id: { $in: pokemonIds } })
+      : [];
+    if (pokemon.length !== pokemonIds.length) {
+      const found = new Set(pokemon.map((p) => p.id));
+      const missing = pokemonIds.filter((pid) => !found.has(pid));
+      throw new AppException('UNKNOWN_POKEMON', `Unknown Pokémon id(s): ${missing.join(', ')}`);
+    }
+
+    return new Map(pokemon.map((p) => [p.id, p]));
+  }
+
+  // Full replace: drop the existing team, recreate it from `pokemonIds` — array order
+  // becomes slot order (index 0 = slot 1).
+  private async replaceTeam(
+    em: EntityManager,
+    profile: Profile,
+    pokemonIds: number[],
+    pokemonById: Map<number, Pokemon>
+  ): Promise<void> {
+    await em.nativeDelete(ProfilePokemon, { profile });
+    pokemonIds.forEach((pokemonId, index) => {
+      const pokemon = pokemonById.get(pokemonId);
+      if (!pokemon) {
+        // Unreachable given validateTeamSelection's checks — kept as a real error
+        // instead of a non-null assertion, in case that check is ever changed.
+        throw new AppException('UNKNOWN_POKEMON', `Unknown Pokémon id(s): ${pokemonId}`);
+      }
+      em.create(ProfilePokemon, { profile, pokemon, slot: index + 1 });
+    });
+    await em.flush();
+  }
+
+  private async loadTeam(em: EntityManager, profile: Profile): Promise<ProfileWithTeamDto> {
+    const members = await em.find(ProfilePokemon, { profile }, { populate: ['pokemon'] });
+    return toProfileWithTeamDto(profile, members);
   }
 }
