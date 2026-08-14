@@ -1,4 +1,4 @@
-import type { PokemonDto } from './pokemon.js';
+import type { PokemonDto } from './pokemon';
 
 export interface ProfileDto {
   id: string;
