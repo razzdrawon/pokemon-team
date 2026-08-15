@@ -1,18 +1,8 @@
-# Chorus Interview
+# Pokémon Team Builder
 
-## About this Interview
-
-Welcome to Chorus Engineering's Interview project!
-
-We're looking for engineers who are experienced, passionate, and obsessed with strong systems and high productivity.
-
-To facilitate this, we provide an interview project that mirrors the technical stack we use here at Chorus.
-
-**You, the interviewee, have the power to decide if this is the technology that you want to work on.**
-
-The goal of this interview is to understand how you think and build. We care less about whether every feature is complete and more about the decisions you made along the way — your architecture choices, your tradeoffs, what you reached for and why. Show your work. A well-reasoned, thoughtfully structured solution will always stand out over one that just checks the boxes.
-
-This is a take-home project. If it goes well, we'll invite you to a 1-hour pairing session where we'll extend your work together — so treat it like something you'd actually hand off.
+A Pokémon team builder: pick a Profile, choose up to 6 of the first 150 Pokémon, submit.
+Originally built as Chorus Engineering's take-home interview project; this README now
+documents the finished app for anyone running or reviewing it.
 
 ## Tech Stack
 
@@ -34,6 +24,9 @@ This is a take-home project. If it goes well, we'll invite you to a 1-hour pairi
 - **[docs/PLAN.md](docs/PLAN.md)** — the internal working plan this was built from
 - **[LLM_TRANSCRIPT.md](LLM_TRANSCRIPT.md)** — full AI-assisted session transcript
 
+Start with `DECISIONS.md` for the reasoning behind the build; `ARCHITECTURE.md` for how it's
+put together.
+
 ## Prerequisites
 
 - [nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
@@ -41,8 +34,6 @@ This is a take-home project. If it goes well, we'll invite you to a 1-hour pairi
 - [Tilt](https://docs.tilt.dev/install.html) (`brew install tilt` on macOS)
 
 ## Getting Started
-
-**The Hiring Manager will send you a link to this repository.**
 
 Clone this repository, then run the setup script:
 
@@ -70,6 +61,10 @@ Stop everything when you're done:
 tilt down
 ```
 
+> **Note:** the `backend: build if changed` resource in the Tilt UI is manual-trigger — click
+> ▶ on it once per `tilt up`, or backend changes won't reach the running pod. See
+> [`CLAUDE.md`](CLAUDE.md) for this and other dev-loop gotchas.
+
 ### Connecting to the Database
 
 Use whatever tool you'd like to connect to the database.
@@ -84,56 +79,20 @@ Use whatever tool you'd like to connect to the database.
 | Username | admin     |
 | Password | admin     |
 
-## Prompt
+### Trying the API
 
-Lets make a Pokémon Team builder!
+Import [`postman/pokemon-team-builder.postman_collection.json`](postman/pokemon-team-builder.postman_collection.json)
+into Postman for every endpoint plus the documented error cases. `baseUrl` defaults to
+`localhost:3000/api`.
 
-We want to create a way to select 6 Pokémon to be on our team.
+### Running the tests
 
-The UI should allow the user to:
+```bash
+nx run-many -t lint test build     # unit tests + build, backend and frontend
+nx e2e pokemon-ui-e2e -- --project=chromium   # e2e, needs tilt up running
+```
 
-1. View a list of the first 150 Pokémon
-2. Select from the list of Pokémon
-3. Submit the Pokémon that we have selected to the backend.
-
-**It does not have to be a beautiful UX experience. We're aiming for functional.**
-
-### Completion Criteria
-
-Database Requirements
-
-- There should be a Profile table
-- There should be a Pokémon table
-- There should be a relationship between Pokémon and Profiles.
-
-UI Requirements
-
-- Show a list of the first 150 Pokémon
-- Show selectable Profiles
-- Select a profile, and choose up to 6 Pokémon.
-
-API Requirements
-
-- Return pokemon
-- Create Profiles
-- Handle receiving Pokémon related to Profiles
-
-## AI Use
-
-Use of AI-assisted programming is acceptable.
-
-If you use an LLM, add an `LLM_TRANSCRIPT.md` file to the repo with the following:
-
-- The tool and model used (e.g. Cursor, Claude Sonnet 4.5)
-- The **full conversation** — your prompts and the model's responses. Not just the generated output.
-
-## Submission Criteria
-
-All of your work should be located in a Github Repo.
-
-Ensure your repo is public, and submit the URL back to the hiring manager.
-
-### Troubleshooting
+## Troubleshooting
 
 > The setup script fails on a prerequisite.
 
@@ -151,6 +110,7 @@ Make sure Docker Desktop is running and Kubernetes is healthy. You can verify wi
 kubectl cluster-info --context docker-desktop
 ```
 
-> The requirements are confusing. I'm stuck.
+> The backend won't pick up my changes / new database migrations.
 
-Contact the hiring manager, and inform them of the situation. Be specific and clear about your concerns or issues.
+Click ▶ on `backend: build if changed` in the Tilt UI, and check `pnpm mikro-orm migration:up`
+ran from `packages/pokemon-user-backend`. See `CLAUDE.md`'s gotchas list.
