@@ -53,6 +53,31 @@ Full reasoning and the complete plan are in [`PLAN.md`](PLAN.md) for anyone who 
   path-alias plugin — a pre-existing skeleton gap, invisible until the first spec needed
   `@pokemon/contracts`. Fixed by adding the plugin there too.
 
+## Pre-merge review (PR #2)
+
+Multi-angle review before merging into `main`: 10 real findings, 3 fixed, 7 deferred.
+
+**Fixed:**
+- **Profile-switch race** — switching profiles or double-submitting could silently write
+  one profile's team onto another. `useAsync`'s stale `data` during a refetch, no interlock
+  on the profile picker. Fixed: clear team state on profile change, guard stale PUT
+  responses against the now-selected profile, disable switching mid-submit.
+- **Profile name wasn't trimmed** — whitespace-only names passed validation, padded names
+  bypassed uniqueness. Fixed: trim before validation, server-side.
+- **Malformed JSON returned `500 INTERNAL_ERROR`** instead of `400 VALIDATION_FAILED`.
+  Fixed: map framework-level 400s to the same code our own pipe uses.
+
+**Deferred (confirmed, not blocking):**
+- Migration `down()` on the composite-PK change re-adds a `NOT NULL` column with no
+  default — breaks rollback once the table has any rows.
+- Deleted `some_entity` migration has no `DROP TABLE` — orphans the table on non-fresh DBs.
+- `MAX_TEAM_SIZE`'s DB `CHECK` can drift from the constant with no CI guard.
+- `ProfilePicker`/e2e hardcode `6` instead of importing `MAX_TEAM_SIZE`.
+- `useTeamSelection.isSelected` is exported but unused; `PokemonGrid` duplicates the lookup.
+- `replaceTeam`'s defensive `UNKNOWN_POKEMON` throw is unreachable dead code.
+- `findAll()` full-scans the join table instead of a SQL aggregate — already a documented,
+  scale-aware tradeoff, not an oversight.
+
 ## Deferred
 
 - **`seed_metadata` table for data-import versioning** — the seed JSON's own header
