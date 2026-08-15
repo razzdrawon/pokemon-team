@@ -27,6 +27,15 @@ Full reasoning and the complete plan are in [`PLAN.md`](PLAN.md) for anyone who 
   startup. Deterministic, offline, no network dependency for anyone running `tilt up`.
 - **Pokédex number as `Pokemon`'s PK; uuid for `Profile`.** Immutable reference data vs.
   user-generated data — mixed key strategy is intentional, not inconsistent.
+- **No mock API layer / `VITE_USE_MOCK_API` flag.** `api/client.ts` talks straight to the
+  real backend; `test/fixtures.ts` keeps component tests independent of it. Same goal as
+  `PLAN.md`'s mock design, simpler mechanism.
+- **Mutation responses update state directly, not a refetch.** `setTeam`/`createProfile`
+  responses are written straight into local state — `useAsync`'s `refetch` returns a cleanup
+  function, not a promise, so it isn't awaitable, and the response already has everything
+  needed anyway.
+- **Not every component is fully "dumb."** `ProfilePicker` owns its own create-form state
+  rather than lifting it to `app.tsx`. Acceptable at this scope; not worth extracting further.
 
 ## Gotchas found while building
 
@@ -48,3 +57,5 @@ Full reasoning and the complete plan are in [`PLAN.md`](PLAN.md) for anyone who 
   filtering is a UI feature beyond what the prompt asked for.
 - **Pagination / search beyond the first 150** — out of scope; the prompt fixes the list at 150.
 - **Auth** — Profiles are unowned by design; the prompt never introduces a concept of "user."
+- **UX polish** (styling, spacing, empty/loading-state affordances) — functional over
+  polished per the prompt; a reasonable next step for a pairing session, not the MVP.

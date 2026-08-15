@@ -87,6 +87,30 @@ graph TD
 double-registers the same entities and crashes on boot. Neither uses `@InjectRepository()`
 anyway, so it wasn't doing anything.
 
+## Frontend structure
+
+```mermaid
+graph TD
+    App --> ProfilePicker
+    App --> PokemonGrid
+    App --> TeamTray
+    App -->|usePokemon, useProfiles, useProfileTeam| Hooks[hooks/useAsync]
+    App -->|useTeamSelection| Selection[local selection state]
+    Hooks --> ApiModules[api/pokemon.api.ts · api/profiles.api.ts]
+    ApiModules --> Client[api/client.ts]
+    Client -->|"fetch /api/*"| Backend
+```
+
+Every data hook composes `useAsync` (`data`/`error`/`loading`/`refetch`). `refetch` isn't
+awaitable — why: `DECISIONS.md`.
+
+Submitting a team, client side:
+
+1. `PokemonGrid` / `TeamTray` call `useTeamSelection.toggle` — local state only, no request
+2. "Submit team" → `setTeam(profileId, { pokemonIds })`
+3. Response (`ProfileWithTeamDto`) is written directly into local state
+4. `ApiError` → message shown inline near the tray
+
 ## Contracts boundary
 
 ```mermaid
