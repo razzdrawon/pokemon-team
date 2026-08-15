@@ -33,7 +33,7 @@ export function PokemonCard({ pokemon, selected, disabled, onToggle }: PokemonCa
       disabled={disabled && !selected} // stay clickable if already selected, so it can be removed
       onClick={() => onToggle(pokemon.id)}
     >
-      <img src={pokemon.spriteUrl} alt={pokemon.name} width={64} height={64} />
+      <img src={pokemon.spriteUrl} alt="" width={64} height={64} /> {/* redundant with the visible name below */}
       <span>{pokemon.name}</span>
     </Card>
   );
