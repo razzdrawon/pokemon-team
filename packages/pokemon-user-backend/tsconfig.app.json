@@ -5,7 +5,9 @@
     "types": ["node"],
     "module": "nodenext",
     "moduleResolution": "nodenext",
-    "target": "ES2022"
+    "target": "ES2022",
+    "resolveJsonModule": true,
+    "rootDir": "../.." // covers @pokemon/contracts too; tsc/tsserver only, Vite ignores it
   },
   "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts"],
   "include": ["src/**/*.ts"]

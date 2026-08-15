@@ -1,5 +1,9 @@
 {
   "compilerOptions": {
+    // Needed by @mikro-orm/cli's swc-node loader to resolve `paths` aliases (confirmed by
+    // testing — removing it breaks `mikro-orm migration:create`). TS 6 deprecates baseUrl
+    // and errors on it by default; ignoreDeprecations silences that without dropping it.
+    "ignoreDeprecations": "6.0",
     "emitDecoratorMetadata": true,
     "esModuleInterop": true,
     "experimentalDecorators": true,
@@ -13,6 +17,10 @@
     "strict": true,
     "strictNullChecks": true,
     "target": "ES2022",
-    "types": ["node"]
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@pokemon/contracts": ["packages/pokemon-contracts/src/index.ts"]
+    }
   }
 }

@@ -3,7 +3,7 @@ import { UnderscoreNamingStrategy } from '@mikro-orm/core';
 import { ReflectMetadataProvider } from '@mikro-orm/decorators/legacy';
 import { Migrator } from '@mikro-orm/migrations';
 import { defineConfig } from '@mikro-orm/postgresql';
-import { SomeEntity } from './src/modules/database/entities/some.entity';
+import { entities } from './src/modules/database/entities/index';
 
 export default defineConfig({
   host: process.env['DB_HOST'] ?? 'localhost',
@@ -12,7 +12,7 @@ export default defineConfig({
   password: process.env['DB_PASSWORD'] ?? 'admin',
   dbName: process.env['DB_NAME'] ?? 'pokemon',
 
-  entities: [SomeEntity],
+  entities,
   metadataProvider: ReflectMetadataProvider,
   namingStrategy: UnderscoreNamingStrategy,
 
