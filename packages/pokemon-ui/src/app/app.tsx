@@ -20,13 +20,17 @@ export function App() {
   } = useProfiles();
 
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
-  const { data: fetchedTeam } = useProfileTeam(selectedProfileId);
+  const { data: fetchedTeam, loading: teamLoading } = useProfileTeam(selectedProfileId);
 
   // Local copy so a successful submit can update it directly from the PUT response,
   // without waiting on useAsync's refetch (which isn't awaitable — see useAsync.ts).
   const [team, setTeamState] = useState<ProfileWithTeamDto | null>(null);
+
+  // Clear on profile change so the old team can't briefly show under the new profile.
+  // eslint-disable-next-line @eslint-react/hooks-extra/no-direct-set-state-in-use-effect -- resetting on id change, not deriving from a fetch result
+  useEffect(() => setTeamState(null), [selectedProfileId]);
   // eslint-disable-next-line @eslint-react/hooks-extra/no-direct-set-state-in-use-effect -- syncing an external fetch result into local state, same as useAsync.ts
-  useEffect(() => setTeamState(fetchedTeam), [fetchedTeam]);
+  useEffect(() => setTeamState(fetchedTeam ?? null), [fetchedTeam]);
 
   const selection = useTeamSelection();
   useEffect(() => {
@@ -52,14 +56,19 @@ export function App() {
 
   async function handleSubmit() {
     if (!selectedProfileId) return;
+    const submittedFor = selectedProfileId; // guards against a stale response landing on a different profile
     setSubmitError(undefined);
     setSubmitting(true);
     try {
-      const updated = await submitTeam(selectedProfileId, { pokemonIds: selection.selectedIds });
-      setTeamState(updated);
+      const updated = await submitTeam(submittedFor, { pokemonIds: selection.selectedIds });
+      if (submittedFor === selectedProfileId) {
+        setTeamState(updated);
+      }
       refetchProfiles();
     } catch (err) {
-      setSubmitError(err instanceof ApiError ? err.message : 'Failed to save team');
+      if (submittedFor === selectedProfileId) {
+        setSubmitError(err instanceof ApiError ? err.message : 'Failed to save team');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -78,6 +87,7 @@ export function App() {
         onSelect={setSelectedProfileId}
         onCreate={handleCreate}
         createError={createError}
+        disabled={submitting} // block profile switches while a submit for the current one is in flight
       />
       {selectedProfileId && (
         <>
@@ -86,7 +96,7 @@ export function App() {
             pokemonById={pokemonById}
             onRemove={selection.toggle}
             onSubmit={handleSubmit}
-            submitting={submitting}
+            submitting={submitting || teamLoading}
             submitError={submitError}
           />
           <PokemonGrid

@@ -1,5 +1,5 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException } from '@nestjs/common';
-import type { ApiErrorBody } from '@pokemon/contracts';
+import type { ApiErrorBody, ApiErrorCode } from '@pokemon/contracts';
 import { AppException } from './app-exception.js';
 
 // Minimal shape for what we use — no @types/express installed, and the full type isn't needed.
@@ -35,10 +35,11 @@ export class ApiErrorFilter implements ExceptionFilter {
         ...(exception.details ? { details: exception.details } : {}),
       };
     }
-    // Framework errors outside our 5 documented endpoints (e.g. an unmatched route) —
-    // keep the real status; none of our domain codes fit, so INTERNAL_ERROR is a stand-in.
     if (exception instanceof HttpException) {
-      return { statusCode: exception.getStatus(), code: 'INTERNAL_ERROR', message: exception.message };
+      const statusCode = exception.getStatus();
+      // 400 = framework-level validation failure (e.g. malformed JSON); else no domain code fits.
+      const code: ApiErrorCode = statusCode === 400 ? 'VALIDATION_FAILED' : 'INTERNAL_ERROR';
+      return { statusCode, code, message: exception.message };
     }
     console.error(exception);
     return { statusCode: 500, code: 'INTERNAL_ERROR', message: 'Internal server error' };

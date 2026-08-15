@@ -8,6 +8,7 @@ interface ProfilePickerProps {
   onSelect: (id: string) => void;
   onCreate: (name: string) => Promise<void>;
   createError?: string;
+  disabled?: boolean; // e.g. a team submit is in flight for the current profile
 }
 
 const List = styled.ul`
@@ -24,6 +25,11 @@ const ProfileButton = styled.button<{ selected: boolean }>`
   border: 2px solid ${(p) => (p.selected ? '#3b82f6' : '#e5e7eb')};
   background: ${(p) => (p.selected ? '#eff6ff' : 'white')};
   cursor: pointer;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 `;
 
 export function ProfilePicker({
@@ -32,6 +38,7 @@ export function ProfilePicker({
   onSelect,
   onCreate,
   createError,
+  disabled,
 }: ProfilePickerProps) {
   const [name, setName] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -56,6 +63,7 @@ export function ProfilePicker({
             <ProfileButton
               type="button"
               selected={p.id === selectedProfileId}
+              disabled={disabled}
               onClick={() => onSelect(p.id)}
             >
               {p.name} ({p.teamSize}/6)
@@ -68,8 +76,9 @@ export function ProfilePicker({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="New profile name"
+          disabled={disabled}
         />
-        <button type="submit" disabled={submitting || !name.trim()}>
+        <button type="submit" disabled={disabled || submitting || !name.trim()}>
           Create
         </button>
         {createError && <span role="alert">{createError}</span>}
