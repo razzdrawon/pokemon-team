@@ -36,6 +36,12 @@ Full reasoning and the complete plan are in [`PLAN.md`](PLAN.md) for anyone who 
   needed anyway.
 - **Not every component is fully "dumb."** `ProfilePicker` owns its own create-form state
   rather than lifting it to `app.tsx`. Acceptable at this scope; not worth extracting further.
+- **One e2e test, not a suite.** It covers the real end-to-end workflow (create → select 6 →
+  submit → reload → persisted) against the live stack; business rules are unit tested
+  separately. Enough for this scope — more integration coverage is a good next step given
+  more time, not a gap in what's here.
+- **CI runs lint/test/build, not e2e.** The Playwright test needs the live Tilt/k8s stack;
+  standing that up in Actions is real infra work for one test, not worth it at this scope.
 
 ## Gotchas found while building
 

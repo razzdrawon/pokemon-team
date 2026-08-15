@@ -17,6 +17,8 @@ Tilt runs all three. Frontend is a local process (fast HMR); backend and Postgre
 Docker Desktop's Kubernetes. See `CLAUDE.md` for the dev-loop gotchas (manual backend build
 trigger, PVC persistence).
 
+CI (`.github/workflows/ci.yml`) runs `nx run-many -t lint test build` on every PR into `main`.
+
 ## Data model
 
 ```mermaid
