@@ -6,42 +6,43 @@ Full reasoning and the complete plan are in [`PLAN.md`](PLAN.md) for anyone who 
 ## Key decisions & tradeoffs
 
 - **Explicit `ProfilePokemon` join entity, composite PK `(profile, slot)`.** Not MikroORM's
-  implicit `@ManyToMany` — that gives a pivot table with no room for `slot`. No surrogate
-  id: nothing ever addresses a membership row by its own id. `UNIQUE(profile, pokemon)` +
-  the composite PK makes the 6-cap structural, not just app logic. (Supersedes `PLAN.md`'s
-  original surrogate-uuid design, decided mid-build.)
-- **6-max enforced in three layers, not one.** DB `CHECK` = guarantee, `ProfileService` =
-  authority (the actual 400), frontend = affordance (disables the 7th card). Each covers a
-  failure mode the others can't — not redundant.
+  implicit `@ManyToMany` — a pivot table can't hold a `slot` column. I questioned the
+  surrogate uuid PK partway through the build, since no row is ever addressed by its own id;
+  a composite PK covers it, and `UNIQUE(profile, pokemon)` makes the 6-cap structural.
+- **6-max enforced in three layers, not one.** I weighed DB vs. backend vs. frontend
+  enforcement and chose all three: DB `CHECK` = guarantee, `ProfileService` = authority (the
+  actual 400), frontend = affordance (disables the 7th card). Each covers a failure mode the
+  others can't.
 - **`MAX_TEAM_SIZE` is the one runtime export from an otherwise types-only contracts lib.**
-  Everything else erases at compile time. The DB `CHECK` derives its expression from this
-  constant, so there's exactly one place the number `6` is ever typed.
+  An early version hardcoded the DB `CHECK`'s literal separately; I flagged the human-error
+  risk, so the `CHECK` now derives from the constant directly — one place `6` is ever typed.
 - **`PUT` full-replace for team submission**, not per-member mutation. Matches "pick 6 and
-  submit," idempotent, no partial-failure states. Delete + recreate happens in one
-  transaction with the validation, so a failed check never touches the table.
-- **Closed `ApiErrorCode` union with fixed precedence**, one global filter. Every domain
-  error becomes the same `ApiErrorBody` shape; `setTeam` checks cheapest/most-fundamental
-  first (`VALIDATION_FAILED → PROFILE_NOT_FOUND → TEAM_SIZE_EXCEEDED → DUPLICATE_POKEMON →
-  UNKNOWN_POKEMON`) so failures are deterministic and testable.
-- **Seed data via a migration, from a committed JSON snapshot** — not a live API call at
-  startup. Deterministic, offline, no network dependency for anyone running `tilt up`.
+  submit," idempotent, no partial-failure states — delete + recreate in one transaction with
+  the validation, so a failed check never touches the table.
+- **Closed `ApiErrorCode` union with fixed precedence**, one global filter. I wanted explicit
+  success/error contracts before building both sides in parallel: `VALIDATION_FAILED →
+  PROFILE_NOT_FOUND → TEAM_SIZE_EXCEEDED → DUPLICATE_POKEMON → UNKNOWN_POKEMON`. Reviewing
+  the first draft I cut an unneeded endpoint (`GET /pokemon/:id`) and pushed until the
+  `UNKNOWN_POKEMON` vs. `PROFILE_NOT_FOUND` distinction made sense.
+- **Seed data via a migration, from a committed JSON snapshot**, not a separate step. My
+  instinct while reviewing the plan — immutable reference data deserves the same
+  versioning/rollback guarantees as the schema. Deterministic, offline, no network dependency
+  for anyone running `tilt up`.
 - **Pokédex number as `Pokemon`'s PK; uuid for `Profile`.** Immutable reference data vs.
-  user-generated data — mixed key strategy is intentional, not inconsistent.
-- **No mock API layer / `VITE_USE_MOCK_API` flag.** `api/client.ts` talks straight to the
-  real backend; `test/fixtures.ts` keeps component tests independent of it. Same goal as
-  `PLAN.md`'s mock design, simpler mechanism.
+  user-generated data — mixed key strategy is intentional.
+- **No mock API layer / `VITE_USE_MOCK_API` flag.** I dropped the planned mock-switch layer
+  once the backend already existed. Kept the frontend testable independently anyway, via
+  `test/fixtures.ts` for component tests instead of a runtime switch.
 - **Mutation responses update state directly, not a refetch.** `setTeam`/`createProfile`
-  responses are written straight into local state — `useAsync`'s `refetch` returns a cleanup
-  function, not a promise, so it isn't awaitable, and the response already has everything
-  needed anyway.
-- **Not every component is fully "dumb."** `ProfilePicker` owns its own create-form state
-  rather than lifting it to `app.tsx`. Acceptable at this scope; not worth extracting further.
-- **One e2e test, not a suite.** It covers the real end-to-end workflow (create → select 6 →
-  submit → reload → persisted) against the live stack; business rules are unit tested
-  separately. Enough for this scope — more integration coverage is a good next step given
-  more time, not a gap in what's here.
-- **CI runs lint/test/build, not e2e.** The Playwright test needs the live Tilt/k8s stack;
-  standing that up in Actions is real infra work for one test, not worth it at this scope.
+  responses go straight into local state — `useAsync`'s `refetch` returns a cleanup function,
+  not a promise, so it isn't awaitable, and the response already has what's needed.
+- **Not every component is fully "dumb."** I noticed `ProfilePicker` owns its create-form
+  state rather than lifting it to `app.tsx` — acceptable at this scope, not worth extracting.
+- **One e2e test, not a suite.** I judged create → select 6 → submit → reload → persisted
+  against the live stack enough for this scope, with business rules unit tested separately.
+  More integration coverage is a good next step given more time.
+- **CI runs lint/test/build, not e2e.** I scoped it there — the Playwright test needs the
+  live Tilt/k8s stack, and standing that up in Actions is real infra work for one test.
 
 ## Gotchas found while building
 
@@ -55,19 +56,21 @@ Full reasoning and the complete plan are in [`PLAN.md`](PLAN.md) for anyone who 
 
 ## Pre-merge review (PR #2)
 
-Multi-angle review before merging into `main`: 10 real findings, 3 fixed, 7 deferred.
+I asked for a review before merging — consistency, dead code, naming/readability, and a
+security scan for anything I'd missed. That produced 10 verified findings; I picked 3 to
+fix now and deferred the rest.
 
 **Fixed:**
 - **Profile-switch race** — switching profiles or double-submitting could silently write
-  one profile's team onto another. `useAsync`'s stale `data` during a refetch, no interlock
-  on the profile picker. Fixed: clear team state on profile change, guard stale PUT
+  one profile's team onto another (`useAsync` kept stale `data` during a refetch, nothing
+  blocked switching mid-submit). Fixed: clear team state on profile change, guard stale PUT
   responses against the now-selected profile, disable switching mid-submit.
 - **Profile name wasn't trimmed** — whitespace-only names passed validation, padded names
-  bypassed uniqueness. Fixed: trim before validation, server-side.
+  bypassed uniqueness. A gap I'd missed earlier. Fixed: trim before validation, server-side.
 - **Malformed JSON returned `500 INTERNAL_ERROR`** instead of `400 VALIDATION_FAILED`.
-  Fixed: map framework-level 400s to the same code our own pipe uses.
+  Fixed: map framework-level 400s to the same code the app's own pipe uses.
 
-**Deferred (confirmed, not blocking):**
+**Deferred (confirmed real, not blocking):**
 - Migration `down()` on the composite-PK change re-adds a `NOT NULL` column with no
   default — breaks rollback once the table has any rows.
 - Deleted `some_entity` migration has no `DROP TABLE` — orphans the table on non-fresh DBs.
